@@ -1,0 +1,3 @@
+# metro_simulation.py yalnızca standart kütüphaneyi kullanır.
+# Aşağıdaki paket sadece scripts/readme_grafikleri.py için gereklidir.
+matplotlib>=3.7
