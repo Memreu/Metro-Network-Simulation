@@ -34,7 +34,7 @@ En hızlı rota (19 dakika): Keçiören -> Gar -> Gar -> Sıhhiye -> Kızılay -
 
 Bu küçük ağda iki yöntem her senaryoda aynı rotayı buldu. Bu beklenen bir durum, çünkü alternatif güzergâh sayısı az. Daha sık örülmüş bir ağda iki yöntemin ayrışmasını beklerim.
 
-Benim için en öğretici kısım isimlendirme ile davranış arasındaki farkı fark etmek oldu: fonksiyonun adı `en_az_aktarma_bul` ama BFS aslında en az durağı buluyor, aktarma sayısını doğrudan minimize etmiyor.
+Benim için en öğretici kısım, fonksiyonun adı ile yaptığı iş arasındaki farkı görmek oldu: adı `en_az_aktarma_bul` ama BFS aslında en az durağı buluyor, aktarma sayısını doğrudan en aza indirmiyor. Aktarma kenarları da birer adım sayıldığı için bu ağda ikisi örtüşüyor, genel durumda örtüşmek zorunda değil.
 
 ## Çalıştırmak için
 
