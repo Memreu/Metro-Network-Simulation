@@ -1,46 +1,24 @@
-# 🚇 Metro Ağı Simülasyonu: BFS ve A* ile Rota Bulma
+# Metro Ağı Simülasyonu
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/algoritma-BFS_·_A*-2E5EAA" alt="Algoritmalar">
-  <img src="https://img.shields.io/badge/bağımlılık-yalnızca_standart_kütüphane-29A36A" alt="Bağımlılık">
-  <img src="https://img.shields.io/badge/lisans-MIT-lightgrey" alt="MIT">
-</p>
+Bu projede bir metro ağını graf olarak modelleyip iki istasyon arasında en az duraklı ve en hızlı rotayı bulan küçük bir Python uygulaması yazdım. Örnek ağı Ankara metrosundan esinlenerek kurdum: üç hat (Kırmızı, Mavi, Turuncu), on iki istasyon ve Kızılay, Demetevler ve Gar'da üç aktarma noktası var. İstasyonlar arası süreler gerçek değil, algoritmaları denemek için seçtiğim dakika değerleri.
 
-Bir metro ağını **graf** olarak modelleyen ve iki istasyon arasında **en az duraklı** (BFS) ve **en hızlı** (A*) rotayı bulan nesne yönelimli bir Python uygulaması. Ankara metrosundan esinlenen örnek ağ üç hat, on iki istasyon ve üç aktarma noktasından oluşuyor.
+Kod yalnızca Python standart kütüphanesini (`collections`, `heapq`, `typing`) kullanıyor.
 
-<p align="center"><img src="images/01_metro_agi.png" width="85%"></p>
+![Örnek metro ağı](images/01_metro_agi.png)
 
-> 🇬🇧 **In English:** An object-oriented Python simulation of a metro network modelled as a weighted graph. Breadth-first search finds the route with the fewest stops and A* (with a priority queue) finds the fastest route in minutes, including transfer times between lines. The project uses only the Python standard library (`collections`, `heapq`, `typing`) and includes input validation and three test scenarios on a sample network inspired by the Ankara metro.
+## Yaklaşım
 
-<details>
-<summary><b>📑 İçindekiler</b></summary>
+Her istasyon `Istasyon` nesnesi, ağın tamamı da `MetroAgi` sınıfı. Aynı istasyonun farklı hatlardaki karşılıklarını ayrı düğüm olarak tuttum ve aralarına aktarma süresi kadar ağırlıklı bir kenar ekledim. Bu yüzden çıktıda "Kızılay -> Kızılay" gibi tekrarlar görünüyor; bunlar hat değiştirilen yerler.
 
-- [Özellikler](#özellikler)
-- [Örnek çıktı](#örnek-çıktı)
-- [Algoritmalar](#algoritmalar)
-- [Kod yapısı](#kod-yapısı)
-- [Kurulum ve çalıştırma](#kurulum-ve-çalıştırma)
-- [Kendi ağını oluşturma](#kendi-ağını-oluşturma)
-- [Sınırlılıklar ve geliştirme fikirleri](#sınırlılıklar-ve-geliştirme-fikirleri)
+- En az duraklı rota için BFS kullandım. Ağırlıksız grafta hedefe ilk ulaşılan yol en az kenarlı yol oluyor. Karmaşıklık O(V + E).
+- En hızlı rota için `heapq` ile öncelikli kuyruk kullanan bir A* yazdım. Sezgisel fonksiyon şu an sabit (1) döndürüyor, yani algoritma pratikte Dijkstra gibi çalışıyor ve en kısa süreyi yine garanti ediyor.
+- Boş istasyon bilgisi, negatif süre ve tanımsız istasyon kimliği için hata fırlatan basit kontroller ekledim.
 
-</details>
+## Sonuçlar
 
-## Özellikler
-
-| | |
-|---|---|
-| 🧭 **En az duraklı rota** | BFS ile, en az istasyondan geçen güzergâh |
-| ⚡ **En hızlı rota** | A* ve öncelikli kuyruk (`heapq`) ile toplam süresi en kısa güzergâh |
-| 🔁 **Aktarmalar** | Aynı istasyonun farklı hatlardaki karşılıkları, aktarma süresiyle bağlanır |
-| 🛡️ **Girdi doğrulama** | Boş istasyon bilgisi, negatif süre ve tanımsız istasyon için anlamlı hata mesajları |
-| 🧩 **Bağımlılıksız** | Yalnızca Python standart kütüphanesi; tip ipuçları (`typing`) ve docstring'lerle belgelenmiş |
-
-## Örnek çıktı
+Dosyadaki üç test senaryosunun çıktısı:
 
 ```text
-=== Test Senaryoları ===
-
 1. AŞTİ'den OSB'ye:
 En az aktarmalı rota: AŞTİ -> Kızılay -> Kızılay -> Ulus -> Demetevler -> OSB
 En hızlı rota (25 dakika): AŞTİ -> Kızılay -> Kızılay -> Ulus -> Demetevler -> OSB
@@ -54,54 +32,11 @@ En az aktarmalı rota: Keçiören -> Gar -> Gar -> Sıhhiye -> Kızılay -> AŞT
 En hızlı rota (19 dakika): Keçiören -> Gar -> Gar -> Sıhhiye -> Kızılay -> AŞTİ
 ```
 
-Rotada art arda iki kez geçen istasyonlar (ör. *Kızılay → Kızılay*) hat değiştirilen aktarma noktalarıdır.
+Bu küçük ağda iki yöntem her senaryoda aynı rotayı buldu. Bu beklenen bir durum, çünkü alternatif güzergâh sayısı az. Daha sık örülmüş bir ağda iki yöntemin ayrışmasını beklerim.
 
-## Algoritmalar
+Benim için en öğretici kısım isimlendirme ile davranış arasındaki farkı fark etmek oldu: fonksiyonun adı `en_az_aktarma_bul` ama BFS aslında en az durağı buluyor, aktarma sayısını doğrudan minimize etmiyor.
 
-### 1. BFS (Genişlik Öncelikli Arama): en az duraklı rota
-
-- Başlangıç istasyonundan başlar, önce tüm komşuları, sonra onların komşularını ziyaret eder (`collections.deque` ile FIFO kuyruk).
-- Ziyaret edilen istasyonlar bir kümede tutulur, böylece döngüye girilmez.
-- Hedefe ilk ulaşıldığı anda bulunan rota, **en az kenardan (durak/aktarma adımından)** oluşan rotadır.
-- Karmaşıklık: **O(V + E)**
-
-### 2. A* Algoritması: en hızlı rota
-
-- Her adımda `g(n) + h(n)` değeri en küçük olan rota genişletilir; `g(n)` o ana kadarki toplam süre, `h(n)` hedefe kalan tahmini süredir.
-- Öncelikli kuyruk olarak `heapq` (min-heap) kullanılır.
-- Bu uygulamada `h(n)` sabit bir değerdir; bu nedenle algoritma pratikte **Dijkstra** gibi davranır ve en kısa süreli rotayı garanti eder.
-- Karmaşıklık: **O((V + E) log V)**
-
-### Neden bu algoritmalar?
-
-| İhtiyaç | Algoritma | Neden |
-|---|---|---|
-| En az durak | BFS | Ağırlıksız grafta en kısa yolu katman katman tarayarak garanti eder |
-| En kısa süre | A* / Dijkstra | Ağırlıklı (dakika) grafta en kısa yolu bulur; iyi bir sezgisel fonksiyonla aramayı hızlandırabilir |
-
-## Kod yapısı
-
-```mermaid
-classDiagram
-    class Istasyon {
-        +str idx
-        +str ad
-        +str hat
-        +List komsular
-        +komsu_ekle(istasyon, sure)
-    }
-    class MetroAgi {
-        +Dict istasyonlar
-        +Dict hatlar
-        +istasyon_ekle(idx, ad, hat)
-        +baglanti_ekle(id1, id2, sure)
-        +en_az_aktarma_bul(baslangic, hedef)
-        +en_hizli_rota_bul(baslangic, hedef)
-    }
-    MetroAgi "1" o-- "*" Istasyon
-```
-
-## Kurulum ve çalıştırma
+## Çalıştırmak için
 
 ```bash
 git clone https://github.com/Memreu/Metro-Network-Simulation.git
@@ -109,14 +44,9 @@ cd Metro-Network-Simulation
 python metro_simulation.py
 ```
 
-Ek bir paket gerekmez. README'deki ağ görselini yeniden üretmek için:
+Ağ görselini yeniden üretmek isterseniz `pip install -r requirements.txt` ile matplotlib'i kurup `python scripts/readme_grafikleri.py` çalıştırabilirsiniz.
 
-```bash
-pip install -r requirements.txt
-python scripts/readme_grafikleri.py
-```
-
-## Kendi ağını oluşturma
+Kendi ağınızı da kurabilirsiniz:
 
 ```python
 from metro_simulation import MetroAgi
@@ -124,34 +54,14 @@ from metro_simulation import MetroAgi
 metro = MetroAgi()
 metro.istasyon_ekle("A1", "Merkez", "Yeşil Hat")
 metro.istasyon_ekle("A2", "Üniversite", "Yeşil Hat")
-metro.baglanti_ekle("A1", "A2", 6)   # 6 dakika
+metro.baglanti_ekle("A1", "A2", 6)
 
 rota, sure = metro.en_hizli_rota_bul("A1", "A2")
 print(" -> ".join(i.ad for i in rota), f"({sure} dk)")
 ```
 
-## Klasör yapısı
+## Eksikler
 
-```
-├── metro_simulation.py           # İstasyon / MetroAgi sınıfları, algoritmalar ve test senaryoları
-├── scripts/
-│   └── readme_grafikleri.py      # Ağ görselini üreten betik
-├── images/                       # README görselleri
-├── requirements.txt              # Yalnızca görsel betiği için (matplotlib)
-├── LICENSE
-└── README.md
-```
+Gerçek anlamda en az aktarmayı bulmak için durumu (istasyon, hat) çifti olarak tutan bir 0-1 BFS gerekiyor; A* için de istasyon koordinatlarıyla anlamlı bir sezgisel tanımlamak istiyorum. Test senaryolarını `pytest` ile birim testlerine çevirmek de listede.
 
-## Sınırlılıklar ve geliştirme fikirleri
-
-- **Gerçek "en az aktarma".** BFS şu an en az durağı buluyor; aktarma sayısını doğrudan en aza indirmek için durumun *(istasyon, hat)* çifti olarak tutulduğu ve yalnızca hat değişiminin maliyetlendirildiği bir arama (ör. 0-1 BFS) gerekir.
-- **Anlamlı bir sezgisel fonksiyon.** İstasyon koordinatları eklenerek A* için kuş uçuşu mesafe / maksimum hız gibi kabul edilebilir (admissible) bir sezgisel tanımlanabilir.
-- **Görselleştirme.** Bulunan rotanın harita üzerinde çizilmesi (matplotlib / networkx).
-- **Çok modlu ulaşım ve ücret.** Otobüs ve metrobüs hatlarının eklenmesi, kullanıcı tipine göre (öğrenci, tam) yolculuk ücretinin hesaplanması.
-- **Testler.** Senaryoların `pytest` ile birim testlerine dönüştürülmesi.
-
----
-
-Bu proje [MIT lisansı](LICENSE) ile paylaşılmaktadır.
-
-**Mehmet Emre Ünlü** · [GitHub](https://github.com/Memreu) · [LinkedIn](https://www.linkedin.com/in/memreu) · [Kaggle](https://www.kaggle.com/memreu)
+MIT lisansı ile paylaşılmıştır.
